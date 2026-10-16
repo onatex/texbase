@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# PocketBase: binario, datos y frontend compilado
+apps/pocketbase/pocketbase
+apps/pocketbase/pocketbase.exe
+apps/pocketbase/pocketbase.zip
+apps/pocketbase/pb_data/
+apps/pocketbase/pb_data.anterior-*/
+apps/pocketbase/pb_public/

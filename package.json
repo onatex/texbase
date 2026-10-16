@@ -1,0 +1,19 @@
+{
+  "name": "texbase",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npm run download --prefix apps/pocketbase",
+    "dev": "concurrently --kill-others --names pb,web \"npm run dev --prefix apps/pocketbase\" \"npm run dev --prefix apps/web\"",
+    "build": "npm run build --prefix apps/web",
+    "start": "npm run start --prefix apps/pocketbase",
+    "lint": "npm run lint --prefix apps/web",
+    "importar-backup": "node --no-warnings scripts/importar-backup-horizons.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "workspaces": [
+    "apps/web"
+  ]
+}

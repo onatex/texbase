@@ -1,0 +1,13 @@
+{
+  "name": "pocketbase-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "download": "node scripts/download-pocketbase.mjs",
+    "dev": "./pocketbase serve --http=127.0.0.1:8090 --dev",
+    "start": "./pocketbase serve --http=0.0.0.0:8090",
+    "migrate": "./pocketbase migrate up",
+    "superuser": "./pocketbase superuser upsert"
+  }
+}

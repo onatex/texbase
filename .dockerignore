@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+apps/pocketbase/pocketbase
+apps/pocketbase/pb_data
+apps/pocketbase/pb_public
+apps/pocketbase/legacy
+.git
+.env

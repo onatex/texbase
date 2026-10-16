@@ -1,0 +1,100 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", sans-serif;
+  overflow-x: clip;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+@layer base {
+  :root {
+    --background: 220 20% 96%;
+    --foreground: 222 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 30% 12%;
+    --primary: 220 60% 20%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 16% 90%;
+    --secondary-foreground: 222 30% 16%;
+    --muted: 220 16% 92%;
+    --muted-foreground: 220 10% 40%;
+    --accent: 22 92% 52%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 14% 84%;
+    --input: 220 14% 84%;
+    --ring: 22 92% 52%;
+    --radius: 0.4rem;
+    --ok: 152 60% 34%;
+    --warn: 40 92% 45%;
+  }
+}
+
+.font-display {
+  font-family: "Barlow Condensed", "Inter", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.stripe-top {
+  background-image: repeating-linear-gradient(
+    135deg,
+    hsl(var(--accent)) 0 14px,
+    hsl(var(--primary)) 14px 28px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ── Global responsive helpers ─────────────────────────────────────────── */
+
+/* Prevent horizontal overflow from wide tables / grids */
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tables: allow horizontal scroll on small screens without breaking layout */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modal content: full-screen on mobile, centered card on larger screens */
+@media (max-width: 640px) {
+  .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Touch-friendly tap targets on small screens */
+@media (max-width: 768px) {
+  button:not(:disabled),
+  a.btn,
+  [role="button"] {
+    min-height: 40px;
+  }
+}
+
+/* Responsive font scaling for display headings */
+@media (max-width: 480px) {
+  .font-display {
+    letter-spacing: 0;
+  }
+}

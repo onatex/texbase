@@ -1,0 +1,9 @@
+services:
+  texbase:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    env_file: .env
+    volumes:
+      - ./apps/pocketbase/pb_data:/pb/pb_data
