@@ -5,41 +5,50 @@
 // para el mismo proveedor + exclusiva cuyas fases y unidades se solapan, se
 // rechaza. Las reparaciones (es_reparacion=true) se permiten.
 onRecordCreateRequest((e) => {
+  // Los campos JSON llegan como JSONRaw (texto); algunos registros antiguos
+  // guardan el JSON doblemente codificado (una cadena con el array dentro).
+  const jsonArray = (raw) => {
+    try {
+      let v = JSON.parse(String(raw || "[]"));
+      if (typeof v === "string") v = JSON.parse(v);
+      return Array.isArray(v) ? v : [];
+    } catch (_) {
+      return [];
+    }
+  };
   const rec = e.record;
   if (!rec) { e.next(); return; }
   if (rec.get("es_reparacion")) { e.next(); return; }
 
-  const provId = rec.get("proveedor_id");
-  const excId = rec.get("exclusiva_id");
+  const provId = rec.getString("proveedor_id");
+  const excId = rec.getString("exclusiva_id");
   if (!provId || !excId) { e.next(); return; }
 
-  let nuevasFases = [];
-  try { nuevasFases = JSON.parse(rec.get("fases") || "[]"); } catch (_) {}
+  const nuevasFases = jsonArray(rec.getString("fases"));
   const nuevasFaseSet = new Set((nuevasFases || []).map((f) => (f.fase || f.nombre_fase || "").toString().trim().toLowerCase()).filter(Boolean));
 
-  const nuevosMonos = rec.get("monos");
-  const nuevosMonosSet = new Set(Array.isArray(nuevosMonos) ? nuevosMonos : []);
+  const nuevosMonosSet = new Set(rec.getStringSlice("monos"));
 
   const ACTIVOS = "estado != 'validado' && estado != 'parcialmente_validado' && estado != 'cerrado'";
   let existentes = [];
   try {
-    existentes = $app.findRecordsByFilter(
+    existentes = e.app.findRecordsByFilter(
       "encargos_externos",
-      'proveedor_id = "' + provId + '" && exclusiva_id = "' + excId + '" && (' + ACTIVOS + ")",
+      "proveedor_id = {:prov} && exclusiva_id = {:exc} && (" + ACTIVOS + ")",
+      "", 0, 0,
+      { prov: provId, exc: excId },
     );
   } catch (_) { e.next(); return; }
 
   for (const ex of existentes) {
     if (ex.get("es_reparacion")) continue;
-    let fasesEx = [];
-    try { fasesEx = JSON.parse(ex.get("fases") || "[]"); } catch (_) {}
+    const fasesEx = jsonArray(ex.getString("fases"));
     const fasesExSet = new Set((fasesEx || []).map((f) => (f.fase || f.nombre_fase || "").toString().trim().toLowerCase()).filter(Boolean));
     let solapaFase = false;
     for (const f of nuevasFaseSet) { if (fasesExSet.has(f)) { solapaFase = true; break; } }
     if (!solapaFase) continue;
 
-    const monosEx = ex.get("monos");
-    const monosExSet = new Set(Array.isArray(monosEx) ? monosEx : []);
+    const monosExSet = new Set(ex.getStringSlice("monos"));
     let solapaMono = false;
     for (const m of nuevosMonosSet) { if (monosExSet.has(m)) { solapaMono = true; break; } }
     if (solapaMono) {
@@ -58,17 +67,24 @@ onRecordCreateRequest((e) => {
 // validado/parcialmente_validado cuando hay unidades aceptadas y el estado
 // actual no es ya cerrado (no degrada un encargo ya cerrado).
 onRecordUpdateRequest((e) => {
+  // Los campos JSON llegan como JSONRaw (texto); algunos registros antiguos
+  // guardan el JSON doblemente codificado (una cadena con el array dentro).
+  const jsonArray = (raw) => {
+    try {
+      let v = JSON.parse(String(raw || "[]"));
+      if (typeof v === "string") v = JSON.parse(v);
+      return Array.isArray(v) ? v : [];
+    } catch (_) {
+      return [];
+    }
+  };
   const rec = e.record;
   if (!rec) { e.next(); return; }
 
-  const tipo = rec.get("tipo_precio") || "por_fase";
+  const tipo = rec.getString("tipo_precio") || "por_fase";
   const precio = Number(rec.get("precio_unitario") || 0);
-  let fases = [];
-  try { fases = JSON.parse(rec.get("fases") || "[]"); } catch (_) {}
-  const numFases = Math.max(1, (fases || []).length);
-  let aceptadas = [];
-  try { aceptadas = JSON.parse(rec.get("unidades_aceptadas") || "[]"); } catch (_) {}
-  const nAceptadas = (aceptadas || []).length;
+  const numFases = Math.max(1, jsonArray(rec.getString("fases")).length);
+  const nAceptadas = jsonArray(rec.getString("unidades_aceptadas")).length;
 
   let importe = 0;
   if (tipo === "paquete") {
@@ -79,20 +95,19 @@ onRecordUpdateRequest((e) => {
   importe = Math.round(importe * 100) / 100;
   rec.set("importe_validado", importe);
 
-  let rechazadas = [];
-  try { rechazadas = JSON.parse(rec.get("unidades_rechazadas") || "[]"); } catch (_) {}
-  const totalUnidades = (rec.get("monos") || []).length;
-  const est = rec.get("estado");
+  const rechazadas = jsonArray(rec.getString("unidades_rechazadas"));
+  const totalUnidades = rec.getStringSlice("monos").length;
+  const est = rec.getString("estado");
 
   if (nAceptadas > 0 && rechazadas.length === 0 && nAceptadas >= totalUnidades && totalUnidades > 0) {
     if (est !== "cerrado") {
       rec.set("estado", "validado");
-      if (!rec.get("fecha_validacion")) rec.set("fecha_validacion", new Date().toISOString().slice(0, 10));
+      if (!rec.getString("fecha_validacion")) rec.set("fecha_validacion", new Date().toISOString().slice(0, 10));
     }
   } else if (nAceptadas > 0) {
     if (est !== "validado" && est !== "cerrado") {
       rec.set("estado", "parcialmente_validado");
-      if (!rec.get("fecha_validacion")) rec.set("fecha_validacion", new Date().toISOString().slice(0, 10));
+      if (!rec.getString("fecha_validacion")) rec.set("fecha_validacion", new Date().toISOString().slice(0, 10));
     }
   }
   e.next();

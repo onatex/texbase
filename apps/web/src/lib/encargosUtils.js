@@ -4,6 +4,19 @@
 // por el portal del proveedor.
 import { expectedFasesForExclusiva } from './fasesUtils';
 
+// Los campos JSON (fases, unidades_aceptadas...) llegan de PocketBase ya como
+// arrays; los registros antiguos pueden traer el JSON como texto.
+export function jsonArray(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v !== 'string' || !v) return [];
+  try {
+    const parsed = JSON.parse(v);
+    return Array.isArray(parsed) ? parsed : jsonArray(typeof parsed === 'string' ? parsed : null);
+  } catch (_) {
+    return [];
+  }
+}
+
 export const ESTADO_LABEL = {
   preparado: 'Preparado',
   enviado: 'Enviado',
@@ -201,7 +214,7 @@ export function metricasMensuales(encargos, mes, any) {
       const f = e.fecha_listo || e.fecha_recepcion || e.fecha_envio_real || e.created;
       if (enMesMadrid(f, mes, any)) {
         const tipo = e.tipo_precio || 'por_fase';
-        const fases = (() => { try { return JSON.parse(e.fases || '[]'); } catch (_) { return []; } })();
+        const fases = jsonArray(e.fases);
         pendienteValidar += calcularImporteValidado(tipo, e.precio_unitario, uds, fases.length);
       }
     }

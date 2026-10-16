@@ -13,6 +13,7 @@ import NotificationsBell from '@/components/common/NotificationsBell';
 import {
   ESTADO_LABEL, ESTADO_COLOR, PROVIDER_NEXT, BANDEJA,
   metricasMensuales, euro, fmtDate, mesActualMadrid, ymMadrid,
+  jsonArray,
 } from '@/lib/encargosUtils';
 
 const TABS = [
@@ -204,7 +205,7 @@ function DashboardTab({ encargos, incs, mesSel, setMesSel, reload }) {
               const ym = ymMadrid(f); return ym && `${ym.y}-${String(ym.m).padStart(2, '0')}` === mesSel;
             }).map((e) => {
               const ex = e.expand?.exclusiva_id;
-              let fases = []; try { fases = JSON.parse(e.fases || '[]'); } catch (_) {}
+              const fases = jsonArray(e.fases);
               return (
                 <tr key={e.id} className="hover:bg-secondary/30">
                   <td className="px-3 py-3 font-semibold">{ex?.exclusiva || '—'}</td>
@@ -280,7 +281,7 @@ function BandejaTab({ encargos, reload, accion }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {encargos.map((e) => {
             const ex = e.expand?.exclusiva_id;
-            let fases = []; try { fases = JSON.parse(e.fases || '[]'); } catch (_) {}
+            const fases = jsonArray(e.fases);
             const uds = (e.monos || []).length;
             return (
               <div key={e.id} className="rounded-xl border-2 border-border bg-card p-4">
@@ -363,7 +364,7 @@ function RecepcionModal({ enc, onClose, onSaved }) {
 
 function EncargoViewModal({ enc, onClose }) {
   const ex = enc.expand?.exclusiva_id;
-  let fases = []; try { fases = JSON.parse(enc.fases || '[]'); } catch (_) {}
+  const fases = jsonArray(enc.fases);
   const uds = enc.monos || [];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
@@ -490,7 +491,7 @@ function HistorialTab({ encargos }) {
           <tbody className="divide-y divide-border">
             {list.map((e) => {
               const ex = e.expand?.exclusiva_id;
-              let fases = []; try { fases = JSON.parse(e.fases || '[]'); } catch (_) {}
+              const fases = jsonArray(e.fases);
               return (
                 <tr key={e.id} className="hover:bg-secondary/30">
                   <td className="px-3 py-3 font-semibold">{ex?.exclusiva || '—'}</td>

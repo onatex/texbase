@@ -10,6 +10,7 @@ import {
   ESTADO_LABEL, ESTADO_COLOR, INTERNAL_NEXT, ESTADOS_ACTIVOS,
   fasesDisponibles, calcularImporteEncargado, calcularImporteValidado,
   euro, fmtDate, esPendienteValidar,
+  jsonArray,
 } from '@/lib/encargosUtils';
 
 const TABS = [
@@ -147,8 +148,7 @@ function EncargosList({ encargos, proveedores, monos, loading, onOpen, emptyText
               {rows.map((e) => {
                 const ex = e.expand?.exclusiva_id;
                 const uds = (e.monos || []).length;
-                let fases = [];
-                try { fases = JSON.parse(e.fases || '[]'); } catch (_) {}
+                const fases = jsonArray(e.fases);
                 const hoy = new Date().toISOString().slice(0, 10);
                 const retrasado = e.fecha_devolucion_comprometida && e.fecha_devolucion_comprometida < hoy && !['validado', 'cerrado'].includes(e.estado);
                 return (
@@ -393,11 +393,10 @@ function EncargoDetail({ encargo, monos, onClose }) {
 
   const ex = enc.expand?.exclusiva_id;
   const prov = enc.expand?.proveedor_id;
-  let fases = [];
-  try { fases = JSON.parse(enc.fases || '[]'); } catch (_) {}
+  const fases = jsonArray(enc.fases);
   const uds = enc.monos || [];
-  const aceptadas = (() => { try { return JSON.parse(enc.unidades_aceptadas || '[]'); } catch (_) { return []; } })();
-  const rechazadas = (() => { try { return JSON.parse(enc.unidades_rechazadas || '[]'); } catch (_) { return []; } })();
+  const aceptadas = jsonArray(enc.unidades_aceptadas);
+  const rechazadas = jsonArray(enc.unidades_rechazadas);
   const monoName = (id) => enc.expand?.monos?.find((m) => m.id === id)?.codi || monos.find((m) => m.id === id)?.codi || id.slice(-6);
 
   const cambiarEstado = async (nuevo, extra = {}) => {
@@ -621,8 +620,7 @@ function IncidenciaModal({ enc, onClose, onSaved }) {
   const [desc, setDesc] = useState('');
   const [fotos, setFotos] = useState([]);
   const [saving, setSaving] = useState(false);
-  let fases = [];
-  try { fases = JSON.parse(enc.fases || '[]'); } catch (_) {}
+  const fases = jsonArray(enc.fases);
 
   const save = async () => {
     if (!desc.trim()) return;

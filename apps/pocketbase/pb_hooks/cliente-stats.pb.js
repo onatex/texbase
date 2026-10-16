@@ -3,6 +3,13 @@
 // Public endpoint: GET /api/cliente/stats
 // No authentication required — returns only non-sensitive production metrics
 routerAdd("GET", "/api/cliente/stats", (e) => {
+  // newQuery().all() necesita un destino tipado; sin él falla con
+  // "Invalid variable type: must be a pointer" y el panel quedaba a cero.
+  const query = (sql, shape) => {
+    const rows = arrayOf(new DynamicModel(shape));
+    $app.db().newQuery(sql).all(rows);
+    return rows;
+  };
   try {
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
@@ -22,10 +29,10 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
     let articlesMap = {};
 
     try {
-      const rows = $app.db().newQuery(`
+      const rows = query(`
         SELECT estat, article, date(updated) as upd
         FROM exclusives
-      `).all();
+      `, { estat: "", article: "", upd: "" });
 
       for (const r of rows) {
         const estat = r.rawColumnValue ? r.rawColumnValue("estat") : (r["estat"] || "");
@@ -55,9 +62,9 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
     // ── Non-conformities ──────────────────────────────────────────────────
     let ncOpen = 0, ncClosed = 0;
     try {
-      const ncRows = $app.db().newQuery(`
+      const ncRows = query(`
         SELECT estat FROM no_conformitats
-      `).all();
+      `, { estat: "" });
       for (const r of ncRows) {
         const estat = r.rawColumnValue ? r.rawColumnValue("estat") : (r["estat"] || "");
         if (estat === "tancada") ncClosed++;
@@ -68,9 +75,9 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
     // ── Avg production time (minutes) ─────────────────────────────────────
     let avgMinutes = 0;
     try {
-      const tRows = $app.db().newQuery(`
-        SELECT AVG(temps_real_seg) as avg_seg FROM registres WHERE estat = 'finalitzat' AND temps_real_seg > 0
-      `).all();
+      const tRows = query(`
+        SELECT IFNULL(AVG(temps_real_seg), 0) as avg_seg FROM registres WHERE estat = 'finalitzat' AND temps_real_seg > 0
+      `, { avg_seg: -0 });
       if (tRows.length > 0) {
         const v = tRows[0].rawColumnValue ? tRows[0].rawColumnValue("avg_seg") : (tRows[0]["avg_seg"] || 0);
         avgMinutes = Math.round((parseFloat(v) || 0) / 60);
@@ -84,14 +91,14 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
 
     let upcoming = [];
     try {
-      const upRows = $app.db().newQuery(`
+      const upRows = query(`
         SELECT id, exclusiva, article, data_entrega, estat, prioritat, ruta
         FROM exclusives
         WHERE data_entrega != '' AND data_entrega >= '${todayStr}' AND data_entrega <= '${next7Str}'
           AND estat NOT IN ('entregada','finalitzada')
         ORDER BY data_entrega ASC
         LIMIT 20
-      `).all();
+      `, { id: "", exclusiva: "", article: "", data_entrega: "", estat: "", prioritat: "", ruta: "" });
 
       for (const r of upRows) {
         const excId = r.rawColumnValue ? r.rawColumnValue("id") : (r["id"] || "");
@@ -113,19 +120,19 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
 
         try {
           // Get all monos for this exclusiva
-          const monoRows = $app.db().newQuery(`
+          const monoRows = query(`
             SELECT id FROM monos WHERE exclusiva = '${excId}'
-          `).all();
+          `, { id: "" });
           const monoIds = monoRows.map(m => m.rawColumnValue ? m.rawColumnValue("id") : (m["id"] || ""));
 
           if (rutaId) {
             // Get operation definitions for this ruta
-            const opRows = $app.db().newQuery(`
+            const opRows = query(`
               SELECT codi, nom, fase, ordre, temps_std_min, fase_ordre
               FROM operacions_def
               WHERE ruta = '${rutaId}' AND actiu = 1
               ORDER BY ordre ASC
-            `).all();
+            `, { codi: "", nom: "", fase: "", ordre: -0, temps_std_min: -0, fase_ordre: -0 });
 
             totalOps = opRows.length;
 
@@ -144,10 +151,10 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
             let enCursNoms = new Set();
             if (monoIds.length > 0) {
               const monoIdList = monoIds.map(id => `'${id}'`).join(",");
-              const regRows = $app.db().newQuery(`
+              const regRows = query(`
                 SELECT operacio, estat, control_qualitat FROM registres
                 WHERE mono IN (${monoIdList})
-              `).all();
+              `, { operacio: "", estat: "", control_qualitat: "" });
               for (const reg of regRows) {
                 const regEstat = reg.rawColumnValue ? reg.rawColumnValue("estat") : (reg["estat"] || "");
                 const regCQ = reg.rawColumnValue ? reg.rawColumnValue("control_qualitat") : (reg["control_qualitat"] || "");
@@ -252,9 +259,9 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
         // NC count for this exclusiva
         let ncCount = 0;
         try {
-          const ncRow = $app.db().newQuery(`
+          const ncRow = query(`
             SELECT COUNT(*) as cnt FROM no_conformitats WHERE exclusiva = '${excId}' AND estat != 'tancada'
-          `).all();
+          `, { cnt: 0 });
           if (ncRow.length > 0) {
             const v = ncRow[0].rawColumnValue ? ncRow[0].rawColumnValue("cnt") : (ncRow[0]["cnt"] || 0);
             ncCount = parseInt(v) || 0;
@@ -291,10 +298,10 @@ routerAdd("GET", "/api/cliente/stats", (e) => {
         const d = new Date(now);
         d.setDate(now.getDate() - i);
         const dStr = d.toISOString().slice(0, 10);
-        const rows = $app.db().newQuery(`
+        const rows = query(`
           SELECT COUNT(*) as cnt FROM exclusives
           WHERE (estat = 'finalitzada' OR estat = 'entregada') AND date(updated) = '${dStr}'
-        `).all();
+        `, { cnt: 0 });
         let cnt = 0;
         if (rows.length > 0) {
           const v = rows[0].rawColumnValue ? rows[0].rawColumnValue("cnt") : (rows[0]["cnt"] || 0);
