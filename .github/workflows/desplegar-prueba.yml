@@ -1,0 +1,91 @@
+# Despliega la versión de prueba en el VPS en cada push a main (o a mano desde
+# la pestaña Actions). Necesita estos secretos del repositorio
+# (Settings → Secrets and variables → Actions):
+#   VPS_HOST           IP del servidor
+#   VPS_PASSWORD       contraseña de root del servidor
+#   PB_ADMIN_EMAIL     email del superusuario del panel /_/
+#   PB_ADMIN_PASSWORD  contraseña del superusuario (mínimo 10 caracteres)
+# y, opcionalmente, la variable DOMINIO (por defecto prueba.texbase.es).
+name: Desplegar prueba
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: desplegar-prueba
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    env:
+      DOMINIO: ${{ vars.DOMINIO || 'prueba.texbase.es' }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+    steps:
+      - name: Comprobar configuración
+        id: config
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "::notice::Falta el secreto VPS_HOST; no se despliega."
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.listo == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.listo == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Compilar
+        if: steps.config.outputs.listo == 'true'
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+          npm run download --prefix apps/pocketbase
+
+      - name: Empaquetar
+        if: steps.config.outputs.listo == 'true'
+        run: |
+          mkdir -p paquete
+          cd apps/pocketbase
+          cp -r pocketbase pb_public pb_migrations pb_hooks ../../paquete/
+          cp ../../scripts/instalar-vps.sh ../../paquete/
+          cd ../..
+          tar czf texbase.tgz -C paquete .
+
+      - name: Subir al servidor
+        if: steps.config.outputs.listo == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: texbase.tgz
+          target: /tmp/texbase-despliegue
+
+      - name: Instalar
+        if: steps.config.outputs.listo == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          PB_ADMIN_EMAIL: ${{ secrets.PB_ADMIN_EMAIL }}
+          PB_ADMIN_PASSWORD: ${{ secrets.PB_ADMIN_PASSWORD }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          envs: DOMINIO,PB_ADMIN_EMAIL,PB_ADMIN_PASSWORD
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /tmp/texbase-despliegue
+            rm -rf paquete && mkdir paquete
+            tar xzf texbase.tgz -C paquete
+            bash paquete/instalar-vps.sh "$DOMINIO" "$PB_ADMIN_EMAIL" "$PB_ADMIN_PASSWORD"

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Instala la versión de prueba de TexBase en un servidor Ubuntu/Debian.
-# Uso (como root, desde la carpeta descomprimida):
-#   bash instalar.sh prueba.texbase.es tu@email.com contraseña-del-panel
+# Uso (como root, desde una carpeta con pocketbase, pb_public, pb_migrations,
+# pb_hooks y, opcionalmente, pb_data):
+#   bash instalar-vps.sh prueba.texbase.es tu@email.com contraseña-del-panel
+# Se puede volver a ejecutar para actualizar: conserva los datos existentes.
 set -euo pipefail
 
 DOMINIO="${1:?Falta el dominio (ej. prueba.texbase.es)}"
@@ -16,16 +18,19 @@ echo "==> Copiando la aplicación a $DEST"
 systemctl stop texbase 2>/dev/null || true
 mkdir -p "$DEST"
 cp -r "$ORIGEN/pocketbase" "$ORIGEN/pb_public" "$ORIGEN/pb_migrations" "$ORIGEN/pb_hooks" "$DEST/"
-if [ ! -f "$DEST/pb_data/data.db" ]; then
+if [ -f "$DEST/pb_data/data.db" ]; then
+	echo "    (ya había datos en $DEST/pb_data; se conservan)"
+elif [ -d "$ORIGEN/pb_data" ]; then
 	cp -r "$ORIGEN/pb_data" "$DEST/"
 else
-	echo "    (ya había datos en $DEST/pb_data; se conservan)"
+	mkdir -p "$DEST/pb_data"
 fi
 chmod +x "$DEST/pocketbase"
 id texbase >/dev/null 2>&1 || useradd --system --home "$DEST" --shell /usr/sbin/nologin texbase
 chown -R texbase:texbase "$DEST"
 
-echo "==> Creando el superusuario del panel (/_/)"
+echo "==> Migraciones y superusuario del panel (/_/)"
+runuser -u texbase -- "$DEST/pocketbase" migrate up --dir="$DEST/pb_data" --migrationsDir="$DEST/pb_migrations" --hooksDir="$DEST/pb_hooks"
 runuser -u texbase -- "$DEST/pocketbase" superuser upsert "$EMAIL" "$PASSWORD" --dir="$DEST/pb_data" --migrationsDir="$DEST/pb_migrations"
 
 echo "==> Servicio systemd"
@@ -48,7 +53,8 @@ LimitNOFILE=4096
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable --now texbase
+systemctl enable texbase
+systemctl restart texbase
 
 echo "==> HTTPS con Caddy"
 if ! command -v caddy >/dev/null; then
