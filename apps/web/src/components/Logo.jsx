@@ -10,7 +10,7 @@ const Logo = ({ size = 'md', className = '' }) => {
 
     return (
         <img
-            src="/logo.png"
+            src={`${import.meta.env.BASE_URL}logo.png`}
             alt="Onatex - Garment Manufacturer"
             className={`${sizes[size]} object-contain ${className}`}
         />

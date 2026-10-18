@@ -28,8 +28,8 @@ const TIPUS_INCIDENCIA = [
     'Plancha', 'Bolsillo', 'Logo', 'Ficha', 'Otra',
 ];
 const FITXES = {
-    'R82-020': '/docs-R82-020.pdf',
-    'R82-021': '/docs-R82-020.pdf',
+    'R82-020': `${import.meta.env.BASE_URL}docs-R82-020.pdf`,
+    'R82-021': `${import.meta.env.BASE_URL}docs-R82-020.pdf`,
 };
 
 /* ─── Session memory helpers ─────────────────────────────────────────────── */

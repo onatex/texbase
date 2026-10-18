@@ -1,5 +1,6 @@
 import React from 'react';
-import { Navigate, Route, Routes, BrowserRouter as Router } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import Router from '@/lib/appRouter';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { AuthProvider, useAuth } from '@/lib/auth';

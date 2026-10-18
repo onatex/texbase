@@ -98,6 +98,17 @@ Para dejarlo como servicio, usa systemd (ver la [documentación de PocketBase](h
 
 Desde el panel `/_/` → Settings → Backups puedes programar copias automáticas (y enviarlas a S3). Como mínimo, copia periódicamente la carpeta `pb_data`.
 
+## Versión de prueba en claude.ai (sin servidor)
+
+`npm run build:demo --prefix apps/web` genera en `apps/web/dist-demo/` una versión que funciona como artefacto de claude.ai, sin PocketBase:
+
+- `src/lib/demo/pocketbaseDemo.js` imita el SDK de PocketBase (filtros, expand, tiempo real, archivos, login) y guarda los registros en la base de datos compartida del artefacto (colecciones `tb_<nombre>`).
+- `src/lib/demo/hooks.js` y `clienteStats.js` reproducen en el navegador la lógica de `pb_hooks`.
+- Todos los usuarios entran con la contraseña de demostración; las reglas de acceso de PocketBase no se aplican.
+- `scripts/datos-demo.mjs` exporta una base de datos de PocketBase al formato que carga la demo.
+
+Si se cambia el esquema, regenera `src/lib/demo/schema.json` con `scripts/gen-demo-schema.mjs`.
+
 ## Migrar los datos desde Horizons
 
 1. Entra en el panel de PocketBase de Horizons: https://texbase.es/hcgi/platform/ (credenciales de superusuario de Horizons).

@@ -12,3 +12,4 @@ apps/pocketbase/pocketbase.zip
 apps/pocketbase/pb_data/
 apps/pocketbase/pb_data.anterior-*/
 apps/pocketbase/pb_public/
+apps/web/dist-demo/

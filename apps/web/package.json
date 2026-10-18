@@ -8,7 +8,8 @@
     "build": "vite build --outDir ../pocketbase/pb_public --emptyOutDir",
     "preview": "vite preview --outDir ../pocketbase/pb_public --host :: --port 3000",
     "lint": "eslint . --quiet",
-    "lint:warn": "eslint ."
+    "lint:warn": "eslint .",
+    "build:demo": "vite build --mode demo && node scripts/pagina-demo.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
