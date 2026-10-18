@@ -72,7 +72,7 @@ docker compose up -d --build
 La app queda en el puerto 8090; los datos, en `apps/pocketbase/pb_data`. Delante pon un proxy con HTTPS (Caddy, Nginx o el panel de Hostinger VPS) apuntando a `localhost:8090`. Ejemplo con Caddy:
 
 ```
-texbase.es {
+tu-dominio.com {
     reverse_proxy localhost:8090
 }
 ```
@@ -82,7 +82,7 @@ texbase.es {
 `scripts/instalar-vps.sh` deja la app como servicio systemd con HTTPS (Caddy). Se ejecuta como root desde una carpeta con `pocketbase`, `pb_public` (compilado), `pb_migrations`, `pb_hooks` y opcionalmente `pb_data`:
 
 ```bash
-bash instalar-vps.sh prueba.texbase.es tu@email.com contraseña-del-panel
+bash instalar-vps.sh tu-dominio.com tu@email.com contraseña-del-panel
 ```
 
 ### Sin Docker (manual)

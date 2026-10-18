@@ -4,7 +4,7 @@ migrate((app) => {
     const settings = app.settings()
 
     settings.meta.appName = "TexBase"
-    settings.meta.appURL = $os.getenv("PB_APP_URL") || "https://texbase.es"
+    if ($os.getenv("PB_APP_URL")) settings.meta.appURL = $os.getenv("PB_APP_URL")
     settings.meta.hideControls = false
     settings.logs.minLevel = 0
 

@@ -5,7 +5,7 @@
 #   VPS_PASSWORD       contraseña de root del servidor
 #   PB_ADMIN_EMAIL     email del superusuario del panel /_/
 #   PB_ADMIN_PASSWORD  contraseña del superusuario (mínimo 10 caracteres)
-# y, opcionalmente, la variable DOMINIO (por defecto prueba.texbase.es).
+# y la variable DOMINIO (el dominio que apunta al servidor).
 name: Desplegar prueba
 
 on:
@@ -21,14 +21,14 @@ jobs:
   desplegar:
     runs-on: ubuntu-latest
     env:
-      DOMINIO: ${{ vars.DOMINIO || 'prueba.texbase.es' }}
+      DOMINIO: ${{ vars.DOMINIO }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
     steps:
       - name: Comprobar configuración
         id: config
         run: |
-          if [ -z "$VPS_HOST" ]; then
-            echo "::notice::Falta el secreto VPS_HOST; no se despliega."
+          if [ -z "$VPS_HOST" ] || [ -z "$DOMINIO" ]; then
+            echo "::notice::Faltan VPS_HOST o DOMINIO; no se despliega."
             echo "listo=false" >> "$GITHUB_OUTPUT"
           else
             echo "listo=true" >> "$GITHUB_OUTPUT"

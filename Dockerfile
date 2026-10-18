@@ -22,4 +22,5 @@ COPY --from=web /app/apps/pocketbase/pb_public ./pb_public
 ENV TZ=Europe/Madrid
 EXPOSE 8090
 VOLUME /pb/pb_data
-CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8090"]
+# PORT lo fijan algunos hostings (Railway, Render...); por defecto, 8090.
+CMD ["sh", "-c", "exec /pb/pocketbase serve --http=0.0.0.0:${PORT:-8090}"]
