@@ -77,7 +77,15 @@ texbase.es {
 }
 ```
 
-### Sin Docker
+### En un VPS (Ubuntu), sin Docker
+
+`scripts/instalar-vps.sh` deja la app como servicio systemd con HTTPS (Caddy). Se ejecuta como root desde una carpeta con `pocketbase`, `pb_public` (compilado), `pb_migrations`, `pb_hooks` y opcionalmente `pb_data`:
+
+```bash
+bash instalar-vps.sh prueba.texbase.es tu@email.com contraseña-del-panel
+```
+
+### Sin Docker (manual)
 
 ```bash
 npm run setup && npm run build
